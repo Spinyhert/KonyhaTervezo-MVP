@@ -3,25 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Konyha Terveő MVP</title>
+  <title>Konyha Tervező MVP</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
 
-<!-- Sablon valaszto overlay -->
+<!-- Sablon overlay -->
 <div id="template-overlay" class="overlay visible">
   <div class="overlay-card">
-    <h1>🍳 Konyha Terveő</h1>
+    <h1>🍳 Konyha Tervező</h1>
     <p>Válassz egy konyha sablont a kezdéshez:</p>
     <div class="template-grid">
-      <div class="tpl-card active" data-tpl="straight" onclick="selectTemplate('straight')">
-        <div class="tpl-icon">─</div><div class="tpl-label">Egyenes</div></div>
-      <div class="tpl-card" data-tpl="l_shape" onclick="selectTemplate('l_shape')">
-        <div class="tpl-icon">└</div><div class="tpl-label">L-alakú</div></div>
-      <div class="tpl-card" data-tpl="u_shape" onclick="selectTemplate('u_shape')">
-        <div class="tpl-icon">∪</div><div class="tpl-label">U-alakú</div></div>
-      <div class="tpl-card" data-tpl="island" onclick="selectTemplate('island')">
-        <div class="tpl-icon">⊟</div><div class="tpl-label">Szigetes</div></div>
+      <div class="tpl-card active" data-tpl="straight" onclick="selectTemplate('straight')"><div class="tpl-icon">─</div><div class="tpl-label">Egyenes</div></div>
+      <div class="tpl-card" data-tpl="l_shape" onclick="selectTemplate('l_shape')"><div class="tpl-icon">└</div><div class="tpl-label">L-alakú</div></div>
+      <div class="tpl-card" data-tpl="u_shape" onclick="selectTemplate('u_shape')"><div class="tpl-icon">∪</div><div class="tpl-label">U-alakú</div></div>
+      <div class="tpl-card" data-tpl="island" onclick="selectTemplate('island')"><div class="tpl-icon">⊟</div><div class="tpl-label">Szigetes</div></div>
     </div>
     <button class="btn btn-primary btn-lg" onclick="startWithTemplate()">Kezdés →</button>
   </div>
@@ -35,6 +31,36 @@
   </div>
 </div>
 
+<!-- Textura feltolto overlay -->
+<div id="tex-overlay" class="overlay">
+  <div class="overlay-card" style="max-width:480px">
+    <button class="btn-icon close-btn" onclick="document.getElementById('tex-overlay').classList.remove('visible')">&#x2715;</button>
+    <h2 style="margin-bottom:1rem;color:var(--accent)">🖼️ Saját Textúra Feltöltés</h2>
+    <p style="color:var(--text2);font-size:0.85rem;margin-bottom:1.2rem">Válassz anyagot, majd tölts fel egy képet (PNG/JPG). A textúra azonnal megjelenik minden szekrényen, amelyhez ez az anyag van rendelve.</p>
+    <div class="prop-group">
+      <label>Melyik anyagra?</label>
+      <select id="tex-mat-select">
+        <option value="white">Fehér</option>
+        <option value="anthracite">Antracit</option>
+        <option value="oak">Tölgy</option>
+        <option value="walnut">Dió</option>
+        <option value="grey">Szürke</option>
+        <option value="cream">Krém</option>
+        <option value="navy">Sötétkék</option>
+        <option value="sage">Zsálya</option>
+        <option value="terracotta">Terrakotta</option>
+        <option value="concrete">Beton</option>
+      </select>
+    </div>
+    <div class="prop-group">
+      <label>Kép feltöltése</label>
+      <input type="file" id="tex-file-input" accept="image/*" style="color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:0.4rem;width:100%" />
+    </div>
+    <button class="btn btn-primary btn-block" onclick="applyCustomTexture()">✅ Alkalmazás</button>
+    <button class="btn btn-block" style="margin-top:0.5rem" onclick="resetCustomTextures()">🔄 Összes visszaállítása</button>
+  </div>
+</div>
+
 <!-- App layout -->
 <div id="app-layout">
   <!-- Bal panel -->
@@ -42,7 +68,7 @@
     <div class="panel-section" style="flex:0 0 auto">
       <div class="panel-header">
         <span>📁 Projektek</span>
-        <button id="btn-new-project" class="btn btn-primary btn-sm" onclick="document.getElementById('template-overlay').classList.add('visible')">+ Új</button>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('template-overlay').classList.add('visible')">+ Új</button>
       </div>
       <ul id="project-list"></ul>
     </div>
@@ -57,8 +83,20 @@
         <button class="btn btn-primary btn-block" onclick="updateRoom()">✓ Alkalmaz</button>
       </div>
     </div>
+    <!-- Napszak csuszka -->
+    <div class="panel-section" style="flex:0 0 auto">
+      <div class="panel-header"><span>☀️ Napszak</span><span id="daytime-label" style="color:var(--accent);font-size:0.8rem">Déli</span></div>
+      <div style="padding:0.6rem 0.8rem">
+        <input type="range" id="daytime-slider" min="0" max="4" step="1" value="2"
+          oninput="setDayTime(+this.value)"
+          style="width:100%;accent-color:var(--accent)" />
+        <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--text2);margin-top:0.2rem">
+          <span>Hajnal</span><span>Reggel</span><span>Dél</span><span>Este</span><span>Éjszaka</span>
+        </div>
+      </div>
+    </div>
     <div class="panel-section">
-      <div class="panel-header"><span>🪑 Szekrények</span></div>
+      <div class="panel-header"><span>🪚 Szekrények</span></div>
       <div class="add-cabinet-grid">
         <button class="btn-add-cab" onclick="addCabinet('base')"><span>🟧</span> Alsó</button>
         <button class="btn-add-cab" onclick="addCabinet('wall')"><span>⬜</span> Felső</button>
@@ -70,16 +108,17 @@
     </div>
   </aside>
 
-  <!-- Kozepso viewport -->
+  <!-- Viewport -->
   <main id="viewport-area">
     <div id="viewport-toolbar">
       <span id="project-title" class="proj-title-bar">—</span>
       <div class="toolbar-btns">
-        <!-- Nezet valto -->
         <button class="btn btn-sm view-btn active" data-view="3d" onclick="switchView('3d')">3D</button>
         <button class="btn btn-sm view-btn" data-view="2d" onclick="switchView('2d')">2D Alaprajz</button>
         <button class="btn btn-sm" onclick="cameraFitAll()">🎯 Nézet</button>
-        <button class="btn btn-sm" onclick="takeSnapshot()">📸 Képernyőkép</button>
+        <button id="btn-turntable" class="btn btn-sm" onclick="toggleTurntable()">🔄 Körbe</button>
+        <button class="btn btn-sm" onclick="takeSnapshot()">📸 Kép</button>
+        <button class="btn btn-sm" onclick="document.getElementById('tex-overlay').classList.add('visible')">🖼️ Textúra</button>
         <button class="btn btn-sm" onclick="document.getElementById('bom-overlay').classList.add('visible')">📋 Darabjegyzék</button>
       </div>
     </div>
@@ -92,9 +131,7 @@
   <!-- Jobb panel -->
   <aside id="right-panel">
     <div class="panel-header"><span>⚙️ Tulajdonságok</span></div>
-    <div id="props-panel">
-      <p class="empty-hint">Kattints egy szekrényre a szerkesztéshez.</p>
-    </div>
+    <div id="props-panel"><p class="empty-hint">Kattints egy szekrényre a szerkesztéshez.</p></div>
   </aside>
 </div>
 
@@ -102,9 +139,9 @@
 <script>
 THREE.OrbitControls = function(camera, domElement) {
   this.target = new THREE.Vector3();
-  var isDown=false,lastX=0,lastY=0,phi=Math.PI/4,theta=0.5,radius=6;
-  var self=this;
-  function update(){ camera.position.set(self.target.x+radius*Math.sin(phi)*Math.cos(theta),self.target.y+radius*Math.cos(phi),self.target.z+radius*Math.sin(phi)*Math.sin(theta)); camera.lookAt(self.target); }
+  var self=this, isDown=false, lastX=0, lastY=0, phi=Math.PI/4, theta=0.5, radius=6;
+  this._radius=radius;
+  function update(){ self._radius=radius; camera.position.set(self.target.x+radius*Math.sin(phi)*Math.cos(theta),self.target.y+radius*Math.cos(phi),self.target.z+radius*Math.sin(phi)*Math.sin(theta)); camera.lookAt(self.target); }
   update();
   domElement.addEventListener('mousedown',function(e){ if(self._disabled) return; isDown=true; lastX=e.clientX; lastY=e.clientY; });
   window.addEventListener('mouseup',function(){ isDown=false; });
@@ -123,6 +160,19 @@ THREE.OrbitControls = function(camera, domElement) {
 function startWithTemplate(){
   document.getElementById('template-overlay').classList.remove('visible');
   createProject();
+}
+function applyCustomTexture(){
+  const matKey=document.getElementById('tex-mat-select').value;
+  const fileInput=document.getElementById('tex-file-input');
+  if(!fileInput.files||!fileInput.files[0]){ showToast('⚠️ Válassz ki egy képet!'); return; }
+  loadCustomTexture(matKey, fileInput.files[0]);
+  document.getElementById('tex-overlay').classList.remove('visible');
+}
+function resetCustomTextures(){
+  Object.keys(customTextures).forEach(k=>delete customTextures[k]);
+  if(window.state&&window.state.cabinets) window.state.cabinets.forEach(c=>addOrUpdateCabinetMesh(c));
+  showToast('🔄 Textúrák visszaállítva');
+  document.getElementById('tex-overlay').classList.remove('visible');
 }
 </script>
 </body>

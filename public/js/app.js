@@ -8,15 +8,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
   await loadProjects();
 });
 
-// --- TOAST ---
 function showToast(msg,duration=2500){
   let t=document.getElementById('toast');
-  if(!t){ t=document.createElement('div'); t.id='toast'; t.style.cssText='position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:0.6rem 1.4rem;border-radius:20px;font-size:0.9rem;z-index:9999;pointer-events:none;transition:opacity 0.3s'; document.body.appendChild(t); }
+  if(!t){ t=document.createElement('div'); t.id='toast'; t.style.cssText='position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:0.6rem 1.4rem;border-radius:20px;font-size:0.9rem;z-index:9999;pointer-events:none;transition:opacity 0.3s;'; document.body.appendChild(t); }
   t.textContent=msg; t.style.opacity='1';
   clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.opacity='0',duration);
 }
 
-// --- VIEW MODE ---
 function switchView(mode){
   viewMode=mode;
   document.getElementById('viewport3d').style.display=mode==='3d'?'block':'none';
@@ -30,7 +28,6 @@ function refreshCanvas2D(){
   draw2D(state.cabinets,state.currentRoom||tpl.room,state.currentWalls.length?state.currentWalls:tpl.walls);
 }
 
-// --- PROJEKTEK ---
 async function loadProjects(){
   const res=await fetch(`${API}/projects`);
   state.projects=await res.json();
@@ -41,12 +38,13 @@ function renderProjectList(){
   ul.innerHTML=state.projects.length===0?'<li class="empty-hint">Még nincs projekt.</li>'
     :state.projects.map(p=>`<li class="project-item ${p.id===state.currentProjectId?'active':''}" onclick="openProject('${p.id}')">
       <span class="proj-name">${p.name}</span>
-      <button class="btn-icon danger" onclick="deleteProject(event,'${p.id}')">&#x1F5D1;</button></li>`).join('');
+      <button class="btn-icon danger" onclick="deleteProject(event,'${p.id}')">🗑</button></li>`).join('');
 }
 async function createProject(){
   const tpl=state.template; const tplData=KitchenTemplates[tpl];
   const name=prompt('Projekt neve:',`Új konyha - ${tplData.label}`); if(!name) return;
-  const res=await fetch(`${API}/projects`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,template:tpl,room_width:tplData.room.w,room_depth:tplData.room.d,room_height:tplData.room.h})});
+  const res=await fetch(`${API}/projects`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,template:tpl,room_width:tplData.room.w,room_depth:tplData.room.d,room_height:tplData.room.h})});
   const {id}=await res.json(); await loadProjects(); await openProject(id);
 }
 async function openProject(id){
@@ -73,8 +71,6 @@ async function deleteProject(event,id){
   if(state.currentProjectId===id){ state.currentProjectId=null; state.cabinets=[]; Object.keys(cabinetMeshes).forEach(cid=>removeCabinetMesh(cid)); document.getElementById('project-title').textContent='—'; document.getElementById('cabinet-list').innerHTML=''; document.getElementById('props-panel').innerHTML='<p class="empty-hint">Kattints egy szekrényre.</p>'; }
   await loadProjects();
 }
-
-// --- SZOBA SZERKESZTO ---
 async function updateRoom(){
   if(!state.currentProjectId) return;
   const w=+document.getElementById('room-w').value;
@@ -83,16 +79,14 @@ async function updateRoom(){
   await fetch(`${API}/projects/${state.currentProjectId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('project-title').textContent,template:state.template,room_width:w,room_depth:d,room_height:h})});
   state.currentRoom={w,d,h};
   const tpl=KitchenTemplates[state.template]||KitchenTemplates.straight;
-  drawRoomWalls({h},tpl.walls);
-  refreshCanvas2D();
+  drawRoomWalls({h},tpl.walls); refreshCanvas2D();
   showToast('✅ Szoba méret frissítve!');
 }
-
-// --- SZEKRENYEK ---
 async function addCabinet(type){
   if(!state.currentProjectId){alert('Előbb nyiss meg egy projektet!');return;}
   const def=CabinetDefaults[type]; const zOffset=state.cabinets.length*(def.w+20);
-  await fetch(`${API}/cabinets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:state.currentProjectId,type,x:0,z:zOffset,w:def.w,h:def.h,d:def.d,corpus_material:'white',front_material:'anthracite',shelves:def.shelves,label:CabinetTypeLabel[type],rotation:0})});
+  await fetch(`${API}/cabinets`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({project_id:state.currentProjectId,type,x:0,z:zOffset,w:def.w,h:def.h,d:def.d,corpus_material:'white',front_material:'anthracite',shelves:def.shelves,label:CabinetTypeLabel[type],rotation:0})});
   await reloadCabinets();
 }
 async function reloadCabinets(){
@@ -108,7 +102,7 @@ function renderCabinetList(){
   ul.innerHTML=state.cabinets.length===0?'<li class="empty-hint">Adj hozzá szekrényt!</li>'
     :state.cabinets.map(c=>`<li class="cabinet-item ${c.id===state.selectedCabinetId?'selected':''}" onclick="selectCabinet('${c.id}')">
       <span>${getCabIcon(c.type)}</span><span class="cab-label">${c.label}</span><span class="cab-size">${c.w}×${c.h}</span>
-      <button class="btn-icon danger" onclick="deleteCabinet(event,'${c.id}')">&#x1F5D1;</button></li>`).join('');
+      <button class="btn-icon danger" onclick="deleteCabinet(event,'${c.id}')">🗑</button></li>`).join('');
 }
 function getCabIcon(t){ return {base:'🟧',wall:'⬜',tall:'📦',drawer_base:'🗄️',corner_base:'📐'}[t]||'📦'; }
 function selectCabinet(id){ state.selectedCabinetId=id; highlightCabinet(id); renderCabinetList(); const cab=state.cabinets.find(c=>c.id===id); if(cab) renderPropsPanel(cab); }
@@ -119,8 +113,6 @@ async function deleteCabinet(event,id){
   if(state.selectedCabinetId===id){ state.selectedCabinetId=null; document.getElementById('props-panel').innerHTML='<p class="empty-hint">Kattints egy szekrényre.</p>'; }
   rebuildWorktops(state.cabinets); renderCabinetList(); renderBomPanel(state.cabinets); refreshCanvas2D();
 }
-
-// --- SNAP TO WALL ---
 async function doSnapToWall(id){
   const cab=state.cabinets.find(c=>c.id===id); if(!cab) return;
   const tpl=KitchenTemplates[state.template]||KitchenTemplates.straight;
@@ -131,8 +123,6 @@ async function doSnapToWall(id){
   renderPropsPanel(cab); refreshCanvas2D();
   showToast('🧲 Falra illesztve!');
 }
-
-// --- TULAJDONSAGOK PANEL ---
 function renderPropsPanel(cab){
   const panel=document.getElementById('props-panel');
   const matOpts=MaterialPresets.map(m=>`<option value="${m.key}" ${m.key===cab.corpus_material?'selected':''}>${m.label}</option>`).join('');
@@ -154,21 +144,17 @@ function renderPropsPanel(cab){
     <div class="prop-group"><label>Front szín</label><select onchange="updateProp('${cab.id}','front_material',this.value)">${frtOpts}</select></div>
     <div class="prop-group"><label>Polcok száma</label><input type="number" min="0" max="6" value="${cab.shelves}" onchange="updateProp('${cab.id}','shelves',+this.value)"/></div>
     <div class="prop-group"><label>Ajtó</label>
-      <button class="${cab.door_open?'btn-open':'btn-closed'}" onclick="toggleDoorBtn('${cab.id}',${!cab.door_open})">${cab.door_open?'🚷 Bezárás':'🚪 Kinyitás'}</button></div>
-    <button class="btn btn-block" style="margin-top:0.6rem" onclick="doSnapToWall('${cab.id}')">&#x1F9F2; Falra illesztés</button>
-    <div style="margin-top:0.6rem;padding:0.4rem 0.6rem;background:rgba(255,255,255,0.04);border-radius:6px;font-size:0.73rem;color:var(--text2)">
+      <button class="${cab.door_open?'btn-open':'btn-closed'}" onclick="toggleDoorBtn('${cab.id}',${!cab.door_open})">${cab.door_open?'🚫 Bezárás':'🚪 Kinyitás'}</button></div>
+    <button class="btn btn-block" style="margin-top:0.5rem" onclick="doSnapToWall('${cab.id}')">🧲 Falra illesztés</button>
+    <div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(255,255,255,0.04);border-radius:6px;font-size:0.72rem;color:var(--text2)">
       ⌨️ ←→↑↓ mozgatás &nbsp;·&nbsp; <b>R</b> = 90° forgatás
     </div>
-    <button class="btn-danger" onclick="deleteCabinet(event,'${cab.id}')">&#x1F5D1; Törlés</button>`;
+    <button class="btn-danger" onclick="deleteCabinet(event,'${cab.id}')">🗑 Törlés</button>`;
 }
-
 async function updateProp(id,prop,value){
   const cab=state.cabinets.find(c=>c.id===id); if(!cab) return;
   const old=cab[prop]; cab[prop]=value;
-  // Utkozesvizsgalat meretvaltozasnal
-  if(['w','d','x','z','rotation'].includes(prop)){
-    if(checkCollision(cab,state.cabinets)){ cab[prop]=old; showToast('⚠️ ÜTKÖZÉS!'); renderPropsPanel(cab); return; }
-  }
+  if(['w','d','x','z','rotation'].includes(prop)&&checkCollision(cab,state.cabinets)){ cab[prop]=old; showToast('⚠️ ÜTKÖZÉS!'); renderPropsPanel(cab); return; }
   await fetch(`${API}/cabinets/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cab)});
   addOrUpdateCabinetMesh(cab); rebuildWorktops(state.cabinets);
   renderBomPanel(state.cabinets); renderCabinetList(); renderPropsPanel(cab); refreshCanvas2D();
