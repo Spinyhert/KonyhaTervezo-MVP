@@ -1,17 +1,21 @@
-const Database = require("better-sqlite3");
-const path = require("path");
+const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, "konyhatervezo.sqlite");
-let db;
+// Pure JS SQLite - nincs C++ fordítás szükséges
+const initSqlJs = require('@databases/sqlite');
 
-function getDb() {
-  if (!db) db = new Database(dbPath);
+const DB_PATH = path.join(__dirname, 'konyhatervezo.db');
+let db = null;
+
+async function getDb() {
+  if (db) return db;
+  db = await initSqlJs(DB_PATH);
   return db;
 }
 
-function init() {
-  const db = getDb();
-  db.exec(`
+async function init() {
+  const db = await getDb();
+  await db.query(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -19,9 +23,11 @@ function init() {
       room_width REAL DEFAULT 3600,
       room_depth REAL DEFAULT 2800,
       room_height REAL DEFAULT 2700,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
-    );
+      created_at TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S','now'))
+    )
+  `);
+  await db.query(`
     CREATE TABLE IF NOT EXISTS cabinets (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
@@ -35,11 +41,10 @@ function init() {
       front_material TEXT DEFAULT 'anthracite',
       shelves INTEGER DEFAULT 1,
       door_open INTEGER DEFAULT 0,
-      label TEXT DEFAULT 'Szekrény',
-      FOREIGN KEY(project_id) REFERENCES projects(id)
-    );
+      label TEXT DEFAULT 'Szekrény'
+    )
   `);
-  console.log("✅ Adatbázis inicializálva");
+  console.log('✅ Adatbázis inicializálva:', DB_PATH);
 }
 
 module.exports = { getDb, init };
