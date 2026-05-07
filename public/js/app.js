@@ -168,6 +168,14 @@ async function updateProp(id,prop,value){
   addOrUpdateCabinetMesh(cab);
   renderBomPanel(state.cabinets);
   renderCabinetList();
+  if(state.selectedCabinetId===id) renderPropsPanel(cab);
+}
+
+async function updateCabinetPosition(id,xmm,zmm){
+  const cab=state.cabinets.find(c=>c.id===id); if(!cab) return;
+  cab.x=xmm; cab.z=zmm;
+  await fetch(`${API}/cabinets/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cab)});
+  if(state.selectedCabinetId===id) renderPropsPanel(cab);
 }
 
 async function toggleDoorBtn(id,open){
