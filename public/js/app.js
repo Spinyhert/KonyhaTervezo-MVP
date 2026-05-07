@@ -1,5 +1,6 @@
 const API='http://localhost:3000/api';
-let state={ projects:[], currentProjectId:null, cabinets:[], selectedCabinetId:null, template:'straight' };
+window.state={ projects:[], currentProjectId:null, cabinets:[], selectedCabinetId:null, template:'straight' };
+const state=window.state;
 
 document.addEventListener('DOMContentLoaded',async()=>{
   init3D();
@@ -77,7 +78,6 @@ async function addCabinet(type){
       w:def.w,h:def.h,d:def.d,corpus_material:'white',front_material:'anthracite',
       shelves:def.shelves,label:CabinetTypeLabel[type]})
   });
-  const {id}=await res.json();
   await reloadCabinets();
 }
 
@@ -157,6 +157,9 @@ function renderPropsPanel(cab){
     <div class="prop-group"><label>Ajtó</label>
       <button class="${cab.door_open?'btn-open':'btn-closed'}" onclick="toggleDoorBtn('${cab.id}',${!cab.door_open})">
         ${cab.door_open?'🚷 Ajtó bezárása':'🚪 Ajtó kinyitása'}</button></div>
+    <div style="margin-top:0.8rem;padding:0.5rem;background:rgba(255,255,255,0.04);border-radius:6px;font-size:0.75rem;color:var(--text2);">
+      ⌨️ <b>Nyíl billentyűk</b>: kiválasztott szekrény mozgatása 50mm-enként
+    </div>
     <button class="btn-danger" onclick="deleteCabinet(event,'${cab.id}')">&#x1F5D1; Szekrény törlése</button>
   `;
 }
