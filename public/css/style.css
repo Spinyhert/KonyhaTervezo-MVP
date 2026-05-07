@@ -22,10 +22,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 
 #app-layout { display: flex; height: 100vh; width: 100vw; }
 aside { background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-#left-panel { width: var(--panel-w); min-width: 200px; }
+#left-panel { width: var(--panel-w); min-width: 200px; overflow-y: auto; }
 #right-panel { width: var(--right-w); min-width: 220px; border-right: none; border-left: 1px solid var(--border); overflow-y: auto; }
-.panel-section { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); flex: 1; overflow: hidden; }
-.panel-section:last-child { border-bottom: none; }
+.panel-section { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); }
+.panel-section:last-child { border-bottom: none; flex: 1; overflow: hidden; }
 .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.8rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text2); background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); }
 #project-list, #cabinet-list { list-style: none; overflow-y: auto; flex: 1; padding: 0.3rem; }
 .project-item, .cabinet-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; font-size: 0.85rem; }
@@ -39,18 +39,20 @@ aside { background: var(--bg2); border-right: 1px solid var(--border); display: 
 .btn-add-cab:hover { background: var(--accent); border-color: var(--accent); }
 
 #viewport-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-#viewport-toolbar { height: var(--toolbar-h); background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1rem; gap: 0.8rem; }
-.proj-title-bar { flex: 1; font-weight: 600; font-size: 1rem; }
-.toolbar-btns { display: flex; gap: 0.5rem; }
+#viewport-toolbar { height: var(--toolbar-h); background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1rem; gap: 0.6rem; flex-wrap: nowrap; overflow: hidden; }
+.proj-title-bar { flex: 1; font-weight: 600; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toolbar-btns { display: flex; gap: 0.4rem; }
 #viewport3d { flex: 1; width: 100%; background: #1a1a2e; display: block; }
+#canvas2d-wrap { flex: 1; }
 
 .btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 0.4rem 0.9rem; cursor: pointer; font-size: 0.82rem; transition: all 0.15s; }
 .btn:hover { background: #533483; border-color: #533483; }
 .btn-primary { background: var(--accent); border-color: var(--accent); }
 .btn-primary:hover { background: #c73652; }
+.btn.active, .view-btn.active { background: var(--accent); border-color: var(--accent); }
 .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
 .btn-lg { padding: 0.7rem 2rem; font-size: 1rem; margin-top: 0.5rem; }
-.btn-block { width: 100%; margin-top: 1rem; }
+.btn-block { width: 100%; margin-top: 0.4rem; }
 .btn-icon { background: transparent; border: none; cursor: pointer; font-size: 1rem; color: var(--text2); transition: color 0.15s; }
 .btn-icon.danger:hover { color: var(--danger); }
 .btn-open { background: rgba(46,204,113,0.15); border: 1px solid var(--success); color: var(--success); border-radius: var(--radius); padding: 0.4rem 0.9rem; cursor: pointer; width: 100%; }

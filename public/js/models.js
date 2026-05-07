@@ -50,3 +50,49 @@ function calcCabinetBom(cab) {
 function calcProjectTotal(cabinets) {
   return cabinets.reduce((s,c)=>s+calcCabinetBom(c).totalPrice,0);
 }
+
+// --- ÜTKÖZÉSVIZSGLÁLAT ---
+function getCabinetAABB(cab) {
+  // Visszaadja a szekrény tengelyparalel befoglaló téglalapát (mm-ben)
+  const rot = (cab.rotation || 0) * Math.PI / 180;
+  const cos = Math.abs(Math.cos(rot)), sin = Math.abs(Math.sin(rot));
+  const hw = (cos * cab.w + sin * cab.d) / 2;
+  const hd = (sin * cab.w + cos * cab.d) / 2;
+  return { minX: cab.x - hw, maxX: cab.x + hw, minZ: cab.z - hd, maxZ: cab.z + hd };
+}
+function checkCollision(movingCab, allCabinets) {
+  const a = getCabinetAABB(movingCab);
+  for (const cab of allCabinets) {
+    if (cab.id === movingCab.id) continue;
+    const b = getCabinetAABB(cab);
+    const overlapX = a.minX < b.maxX - 5 && a.maxX > b.minX + 5;
+    const overlapZ = a.minZ < b.maxZ - 5 && a.maxZ > b.minZ + 5;
+    if (overlapX && overlapZ) return true;
+  }
+  return false;
+}
+
+// --- FALRA ILLESZTS ---
+function snapToNearestWall(cab, walls, snapDist=120) {
+  let best = null, bestDist = Infinity;
+  for (const w of walls) {
+    // Vízszintes fal (z konstans)
+    if (w.x1 !== w.x2 && w.z1 === w.z2) {
+      const dist = Math.abs(cab.z - w.z1);
+      if (dist < snapDist && dist < bestDist) {
+        bestDist = dist;
+        best = { z: w.z1 + (cab.type==='wall' ? 0 : cab.d/2), rotation: 0 };
+      }
+    }
+    // Függőleges fal (x konstans)
+    if (w.z1 !== w.z2 && w.x1 === w.x2) {
+      const dist = Math.abs(cab.x - w.x1);
+      if (dist < snapDist && dist < bestDist) {
+        bestDist = dist;
+        best = { x: w.x1 + (cab.type==='wall' ? 0 : cab.d/2), rotation: 90 };
+      }
+    }
+  }
+  if (!best) return cab;
+  return { ...cab, ...best };
+}
