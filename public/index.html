@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konyha Terveő MVP</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- Sablon választó overlay -->
+<div id="template-overlay" class="overlay visible">
+  <div class="overlay-card">
+    <h1>🍳 Konyha Terveő</h1>
+    <p>Válassz egy konyha sablont a kezdéshez:</p>
+    <div class="template-grid">
+      <div class="tpl-card active" data-tpl="straight" onclick="selectTemplate('straight')">
+        <div class="tpl-icon">─</div>
+        <div class="tpl-label">Egyenes</div>
+      </div>
+      <div class="tpl-card" data-tpl="l_shape" onclick="selectTemplate('l_shape')">
+        <div class="tpl-icon">└</div>
+        <div class="tpl-label">L-alakú</div>
+      </div>
+      <div class="tpl-card" data-tpl="u_shape" onclick="selectTemplate('u_shape')">
+        <div class="tpl-icon">∪</div>
+        <div class="tpl-label">U-alakú</div>
+      </div>
+      <div class="tpl-card" data-tpl="island" onclick="selectTemplate('island')">
+        <div class="tpl-icon">⊟</div>
+        <div class="tpl-label">Szigetes</div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="startWithTemplate()">Kezdés →</button>
+  </div>
+</div>
+
+<!-- BOM overlay -->
+<div id="bom-overlay" class="overlay">
+  <div class="overlay-card bom-card">
+    <button id="btn-close-bom" class="btn-icon close-btn" onclick="document.getElementById('bom-overlay').classList.remove('visible')">&#x2715;</button>
+    <div id="bom-panel"></div>
+  </div>
+</div>
+
+<!-- Fő layout -->
+<div id="app-layout">
+
+  <!-- Bal panel -->
+  <aside id="left-panel">
+    <div class="panel-section">
+      <div class="panel-header">
+        <span>📁 Projektek</span>
+        <button id="btn-new-project" class="btn btn-primary btn-sm">+ Új</button>
+      </div>
+      <ul id="project-list"></ul>
+    </div>
+    <div class="panel-section">
+      <div class="panel-header"><span>🪑 Szekrények hozzáadása</span></div>
+      <div class="add-cabinet-grid">
+        <button class="btn-add-cab" onclick="addCabinet('base')"><span>🟧</span> Alsó</button>
+        <button class="btn-add-cab" onclick="addCabinet('wall')"><span>⬜</span> Felső</button>
+        <button class="btn-add-cab" onclick="addCabinet('tall')"><span>📦</span> Magas</button>
+        <button class="btn-add-cab" onclick="addCabinet('drawer_base')"><span>🗄️</span> Fiókos</button>
+        <button class="btn-add-cab" onclick="addCabinet('corner_base')"><span>📐</span> Sarok</button>
+      </div>
+      <ul id="cabinet-list"></ul>
+    </div>
+  </aside>
+
+  <!-- Középső: 3D viewport -->
+  <main id="viewport-area">
+    <div id="viewport-toolbar">
+      <span id="project-title" class="proj-title-bar">—</span>
+      <div class="toolbar-btns">
+        <button id="btn-fit-camera" class="btn btn-sm" onclick="cameraFitAll()">🎯 Nézet igazítás</button>
+        <button id="btn-show-bom" class="btn btn-sm" onclick="document.getElementById('bom-overlay').classList.add('visible')">📋 Darabjegyzék</button>
+      </div>
+    </div>
+    <div id="viewport3d"></div>
+  </main>
+
+  <!-- Jobb panel: tulajdonságok -->
+  <aside id="right-panel">
+    <div class="panel-header"><span>⚙️ Tulajdonságok</span></div>
+    <div id="props-panel">
+      <p class="empty-hint">Kattints egy szekrényre a szerkesztéshez.</p>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Three.js r134 CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+<!-- Egyszerű OrbitControls -->
+<script>
+THREE.OrbitControls = function(camera, domElement) {
+  this.target = new THREE.Vector3();
+  this.enableDamping = false;
+  this.minDistance = 1;
+  this.maxDistance = 50;
+  var isDown = false, lastX = 0, lastY = 0;
+  var phi = Math.PI/4, theta = 0.5, radius = 6;
+  var self = this;
+  function update() {
+    camera.position.set(
+      self.target.x + radius * Math.sin(phi) * Math.cos(theta),
+      self.target.y + radius * Math.cos(phi),
+      self.target.z + radius * Math.sin(phi) * Math.sin(theta)
+    );
+    camera.lookAt(self.target);
+  }
+  update();
+  domElement.addEventListener('mousedown', function(e){ isDown=true; lastX=e.clientX; lastY=e.clientY; });
+  window.addEventListener('mouseup', function(){ isDown=false; });
+  window.addEventListener('mousemove', function(e){
+    if(!isDown) return;
+    theta -= (e.clientX-lastX)*0.008;
+    phi = Math.max(0.05, Math.min(Math.PI/2-0.05, phi+(e.clientY-lastY)*0.008));
+    lastX=e.clientX; lastY=e.clientY; update();
+  });
+  domElement.addEventListener('wheel', function(e){
+    radius = Math.max(self.minDistance, Math.min(self.maxDistance, radius+e.deltaY*0.01));
+    update();
+  });
+  this.update = function(){};
+  this._fit = function(tx,ty,tz,r){ self.target.set(tx,ty,tz); radius=r; update(); };
+};
+</script>
+
+<!-- App JS -->
+<script src="/js/models.js"></script>
+<script src="/js/scene3d.js"></script>
+<script src="/js/calculator.js"></script>
+<script src="/js/app.js"></script>
+
+<script>
+function startWithTemplate() {
+  document.getElementById('template-overlay').classList.remove('visible');
+  createProject();
+}
+</script>
+</body>
+</html>
