@@ -1,45 +1,60 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { getDb } = require("../data/db");
-const { v4: uuidv4 } = require("uuid");
+const { load, save } = require('../data/db');
+const { v4: uuidv4 } = require('uuid');
 
-router.get("/", (req, res) => {
-  const db = getDb();
-  const rows = db.prepare("SELECT * FROM projects ORDER BY updated_at DESC").all();
-  res.json(rows);
+// Összes projekt
+router.get('/', (req, res) => {
+  const data = load();
+  const sorted = [...data.projects].sort((a,b) => b.updated_at.localeCompare(a.updated_at));
+  res.json(sorted);
 });
 
-router.post("/", (req, res) => {
-  const db = getDb();
-  const id = uuidv4();
+// Új projekt
+router.post('/', (req, res) => {
+  const data = load();
   const { name, template, room_width, room_depth, room_height } = req.body;
-  db.prepare(`INSERT INTO projects (id,name,template,room_width,room_depth,room_height)
-    VALUES (?,?,?,?,?,?)`).run(id, name || "Új projekt", template || "straight",
-    room_width || 3600, room_depth || 2800, room_height || 2700);
-  res.json({ id });
+  const now = new Date().toISOString();
+  const project = {
+    id: uuidv4(),
+    name: name || 'Új projekt',
+    template: template || 'straight',
+    room_width: room_width || 3600,
+    room_depth: room_depth || 2800,
+    room_height: room_height || 2700,
+    created_at: now,
+    updated_at: now
+  };
+  data.projects.push(project);
+  save(data);
+  res.json({ id: project.id });
 });
 
-router.get("/:id", (req, res) => {
-  const db = getDb();
-  const project = db.prepare("SELECT * FROM projects WHERE id=?").get(req.params.id);
-  if (!project) return res.status(404).json({ error: "Nem található" });
-  const cabinets = db.prepare("SELECT * FROM cabinets WHERE project_id=?").all(req.params.id);
+// Projekt betöltése
+router.get('/:id', (req, res) => {
+  const data = load();
+  const project = data.projects.find(p => p.id === req.params.id);
+  if (!project) return res.status(404).json({ error: 'Nem található' });
+  const cabinets = data.cabinets.filter(c => c.project_id === req.params.id);
   res.json({ project, cabinets });
 });
 
-router.put("/:id", (req, res) => {
-  const db = getDb();
-  const { name, template, room_width, room_depth, room_height } = req.body;
-  db.prepare(`UPDATE projects SET name=?,template=?,room_width=?,room_depth=?,room_height=?,
-    updated_at=datetime('now') WHERE id=?`)
-    .run(name, template, room_width, room_depth, room_height, req.params.id);
+// Projekt frissítése
+router.put('/:id', (req, res) => {
+  const data = load();
+  const idx = data.projects.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Nem található' });
+  data.projects[idx] = { ...data.projects[idx], ...req.body, updated_at: new Date().toISOString() };
+  save(data);
   res.json({ ok: true });
 });
 
-router.delete("/:id", (req, res) => {
-  const db = getDb();
-  db.prepare("DELETE FROM cabinets WHERE project_id=?").run(req.params.id);
-  db.prepare("DELETE FROM projects WHERE id=?").run(req.params.id);
+// Projekt törlése
+router.delete('/:id', (req, res) => {
+  const data = load();
+  data.projects = data.projects.filter(p => p.id !== req.params.id);
+  data.cabinets = data.cabinets.filter(c => c.project_id !== req.params.id);
+  save(data);
   res.json({ ok: true });
 });
 

@@ -1,31 +1,47 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { getDb } = require("../data/db");
-const { v4: uuidv4 } = require("uuid");
+const { load, save } = require('../data/db');
+const { v4: uuidv4 } = require('uuid');
 
-router.post("/", (req, res) => {
-  const db = getDb();
-  const id = uuidv4();
+// Szekrény hozzáadása
+router.post('/', (req, res) => {
+  const data = load();
   const { project_id, type, x, z, w, h, d, corpus_material, front_material, shelves, label } = req.body;
-  db.prepare(`INSERT INTO cabinets (id,project_id,type,x,z,w,h,d,corpus_material,front_material,shelves,label)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(id, project_id, type||"base", x||0, z||0, w||600, h||720, d||560,
-      corpus_material||"white", front_material||"anthracite", shelves||1, label||"Szekrény");
-  res.json({ id });
+  const cabinet = {
+    id: uuidv4(),
+    project_id,
+    type: type || 'base',
+    x: x || 0,
+    z: z || 0,
+    w: w || 600,
+    h: h || 720,
+    d: d || 560,
+    corpus_material: corpus_material || 'white',
+    front_material: front_material || 'anthracite',
+    shelves: shelves !== undefined ? shelves : 1,
+    door_open: 0,
+    label: label || 'Szekrény'
+  };
+  data.cabinets.push(cabinet);
+  save(data);
+  res.json({ id: cabinet.id });
 });
 
-router.put("/:id", (req, res) => {
-  const db = getDb();
-  const { x, z, w, h, d, corpus_material, front_material, shelves, door_open, label } = req.body;
-  db.prepare(`UPDATE cabinets SET x=?,z=?,w=?,h=?,d=?,corpus_material=?,front_material=?,
-    shelves=?,door_open=?,label=? WHERE id=?`)
-    .run(x, z, w, h, d, corpus_material, front_material, shelves, door_open ? 1 : 0, label, req.params.id);
+// Szekrény frissítése
+router.put('/:id', (req, res) => {
+  const data = load();
+  const idx = data.cabinets.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Nem található' });
+  data.cabinets[idx] = { ...data.cabinets[idx], ...req.body };
+  save(data);
   res.json({ ok: true });
 });
 
-router.delete("/:id", (req, res) => {
-  const db = getDb();
-  db.prepare("DELETE FROM cabinets WHERE id=?").run(req.params.id);
+// Szekrény törlése
+router.delete('/:id', (req, res) => {
+  const data = load();
+  data.cabinets = data.cabinets.filter(c => c.id !== req.params.id);
+  save(data);
   res.json({ ok: true });
 });
 
