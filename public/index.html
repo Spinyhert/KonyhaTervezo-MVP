@@ -26,17 +26,17 @@
 <!-- BOM overlay -->
 <div id="bom-overlay" class="overlay">
   <div class="overlay-card bom-card">
-    <button class="btn-icon close-btn" onclick="document.getElementById('bom-overlay').classList.remove('visible')">&#x2715;</button>
+    <button class="btn-icon close-btn" onclick="document.getElementById('bom-overlay').classList.remove('visible')">✕</button>
     <div id="bom-panel"></div>
   </div>
 </div>
 
-<!-- Textura feltolto overlay -->
+<!-- Textúra overlay -->
 <div id="tex-overlay" class="overlay">
   <div class="overlay-card" style="max-width:480px">
-    <button class="btn-icon close-btn" onclick="document.getElementById('tex-overlay').classList.remove('visible')">&#x2715;</button>
+    <button class="btn-icon close-btn" onclick="document.getElementById('tex-overlay').classList.remove('visible')">✕</button>
     <h2 style="margin-bottom:1rem;color:var(--accent)">🖼️ Saját Textúra Feltöltés</h2>
-    <p style="color:var(--text2);font-size:0.85rem;margin-bottom:1.2rem">Válassz anyagot, majd tölts fel egy képet (PNG/JPG). A textúra azonnal megjelenik minden szekrényen, amelyhez ez az anyag van rendelve.</p>
+    <p style="color:var(--text2);font-size:0.85rem;margin-bottom:1.2rem">Válassz anyagot, majd tölts fel egy képet (PNG/JPG). A textúra azonnal megjelenik minden szekrényen, amelyhez ez az anyag tartozik.</p>
     <div class="prop-group">
       <label>Melyik anyagra?</label>
       <select id="tex-mat-select">
@@ -61,7 +61,6 @@
   </div>
 </div>
 
-<!-- App layout -->
 <div id="app-layout">
   <!-- Bal panel -->
   <aside id="left-panel">
@@ -83,9 +82,19 @@
         <button class="btn btn-primary btn-block" onclick="updateRoom()">✓ Alkalmaz</button>
       </div>
     </div>
-    <!-- Napszak csuszka -->
+    <!-- Ügyfél adatok -->
     <div class="panel-section" style="flex:0 0 auto">
-      <div class="panel-header"><span>☀️ Napszak</span><span id="daytime-label" style="color:var(--accent);font-size:0.8rem">Déli</span></div>
+      <div class="panel-header"><span>👤 Ügyfél</span></div>
+      <div style="padding:0.5rem;display:flex;flex-direction:column;gap:0.4rem">
+        <div class="prop-group"><label>Név</label><input id="cust-name" type="text" /></div>
+        <div class="prop-group"><label>E-mail</label><input id="cust-email" type="email" /></div>
+        <div class="prop-group"><label>Telefon</label><input id="cust-phone" type="tel" /></div>
+        <button class="btn btn-sm btn-primary" onclick="saveCustomer()">💾 Mentés</button>
+      </div>
+    </div>
+    <!-- Napszak csúszka -->
+    <div class="panel-section" style="flex:0 0 auto">
+      <div class="panel-header"><span>☀️ Napszak</span><span id="daytime-label" style="color:var(--accent);font-size:0.8rem">Dél</span></div>
       <div style="padding:0.6rem 0.8rem">
         <input type="range" id="daytime-slider" min="0" max="4" step="1" value="2"
           oninput="setDayTime(+this.value)"
@@ -119,6 +128,7 @@
         <button id="btn-turntable" class="btn btn-sm" onclick="toggleTurntable()">🔄 Körbe</button>
         <button class="btn btn-sm" onclick="takeSnapshot()">📸 Kép</button>
         <button class="btn btn-sm" onclick="document.getElementById('tex-overlay').classList.add('visible')">🖼️ Textúra</button>
+        <button class="btn btn-sm" onclick="openOfferView()">📄 Árajánlat</button>
         <button class="btn btn-sm" onclick="document.getElementById('bom-overlay').classList.add('visible')">📋 Darabjegyzék</button>
       </div>
     </div>

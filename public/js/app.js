@@ -1,5 +1,5 @@
 const API='http://localhost:3000/api';
-window.state={ projects:[], currentProjectId:null, cabinets:[], selectedCabinetId:null, template:'straight', currentRoom:null, currentWalls:[] };
+window.state={ projects:[], currentProjectId:null, cabinets:[], selectedCabinetId:null, template:'straight', currentRoom:null, currentWalls:[], customer:null };
 const state=window.state;
 let viewMode='3d';
 
@@ -44,7 +44,7 @@ async function createProject(){
   const tpl=state.template; const tplData=KitchenTemplates[tpl];
   const name=prompt('Projekt neve:',`Új konyha - ${tplData.label}`); if(!name) return;
   const res=await fetch(`${API}/projects`,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name,template:tpl,room_width:tplData.room.w,room_depth:tplData.room.d,room_height:tplData.room.h})});
+    body:JSON.stringify({name,template:tpl,room_width:tplData.room.w,room_depth:tplData.room.d,room_height:tplData.room.h,customer_name:'',customer_email:'',customer_phone:''})});
   const {id}=await res.json(); await loadProjects(); await openProject(id);
 }
 async function openProject(id){
@@ -52,6 +52,10 @@ async function openProject(id){
   const {project,cabinets}=await res.json();
   state.currentProjectId=id; state.cabinets=cabinets; state.template=project.template;
   state.currentRoom={w:project.room_width,d:project.room_depth,h:project.room_height};
+  state.customer={name:project.customer_name||'',email:project.customer_email||'',phone:project.customer_phone||''};
+  document.getElementById('cust-name').value=state.customer.name;
+  document.getElementById('cust-email').value=state.customer.email;
+  document.getElementById('cust-phone').value=state.customer.phone;
   const tpl=KitchenTemplates[project.template]||KitchenTemplates.straight;
   state.currentWalls=tpl.walls;
   Object.keys(cabinetMeshes).forEach(cid=>removeCabinetMesh(cid));
@@ -71,17 +75,26 @@ async function deleteProject(event,id){
   if(state.currentProjectId===id){ state.currentProjectId=null; state.cabinets=[]; Object.keys(cabinetMeshes).forEach(cid=>removeCabinetMesh(cid)); document.getElementById('project-title').textContent='—'; document.getElementById('cabinet-list').innerHTML=''; document.getElementById('props-panel').innerHTML='<p class="empty-hint">Kattints egy szekrényre.</p>'; }
   await loadProjects();
 }
+
 async function updateRoom(){
   if(!state.currentProjectId) return;
   const w=+document.getElementById('room-w').value;
   const d=+document.getElementById('room-d').value;
   const h=+document.getElementById('room-h').value;
-  await fetch(`${API}/projects/${state.currentProjectId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('project-title').textContent,template:state.template,room_width:w,room_depth:d,room_height:h})});
+  await fetch(`${API}/projects/${state.currentProjectId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    name:document.getElementById('project-title').textContent,
+    template:state.template,
+    room_width:w,room_depth:d,room_height:h,
+    customer_name:state.customer?.name||'',
+    customer_email:state.customer?.email||'',
+    customer_phone:state.customer?.phone||''
+  })});
   state.currentRoom={w,d,h};
   const tpl=KitchenTemplates[state.template]||KitchenTemplates.straight;
   drawRoomWalls({h},tpl.walls); refreshCanvas2D();
   showToast('✅ Szoba méret frissítve!');
 }
+
 async function addCabinet(type){
   if(!state.currentProjectId){alert('Előbb nyiss meg egy projektet!');return;}
   const def=CabinetDefaults[type]; const zOffset=state.cabinets.length*(def.w+20);
@@ -113,6 +126,7 @@ async function deleteCabinet(event,id){
   if(state.selectedCabinetId===id){ state.selectedCabinetId=null; document.getElementById('props-panel').innerHTML='<p class="empty-hint">Kattints egy szekrényre.</p>'; }
   rebuildWorktops(state.cabinets); renderCabinetList(); renderBomPanel(state.cabinets); refreshCanvas2D();
 }
+
 async function doSnapToWall(id){
   const cab=state.cabinets.find(c=>c.id===id); if(!cab) return;
   const tpl=KitchenTemplates[state.template]||KitchenTemplates.straight;
@@ -123,6 +137,7 @@ async function doSnapToWall(id){
   renderPropsPanel(cab); refreshCanvas2D();
   showToast('🧲 Falra illesztve!');
 }
+
 function renderPropsPanel(cab){
   const panel=document.getElementById('props-panel');
   const matOpts=MaterialPresets.map(m=>`<option value="${m.key}" ${m.key===cab.corpus_material?'selected':''}>${m.label}</option>`).join('');
@@ -147,10 +162,11 @@ function renderPropsPanel(cab){
       <button class="${cab.door_open?'btn-open':'btn-closed'}" onclick="toggleDoorBtn('${cab.id}',${!cab.door_open})">${cab.door_open?'🚫 Bezárás':'🚪 Kinyitás'}</button></div>
     <button class="btn btn-block" style="margin-top:0.5rem" onclick="doSnapToWall('${cab.id}')">🧲 Falra illesztés</button>
     <div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(255,255,255,0.04);border-radius:6px;font-size:0.72rem;color:var(--text2)">
-      ⌨️ ←→↑↓ mozgatás &nbsp;·&nbsp; <b>R</b> = 90° forgatás
+      ⌨️ ←→↑↓ mozgatás · <b>R</b> = 90° forgatás
     </div>
     <button class="btn-danger" onclick="deleteCabinet(event,'${cab.id}')">🗑 Törlés</button>`;
 }
+
 async function updateProp(id,prop,value){
   const cab=state.cabinets.find(c=>c.id===id); if(!cab) return;
   const old=cab[prop]; cab[prop]=value;
@@ -173,3 +189,35 @@ async function toggleDoorBtn(id,open){
   renderPropsPanel(cab);
 }
 function selectTemplate(tpl){ state.template=tpl; document.querySelectorAll('.tpl-card').forEach(el=>el.classList.toggle('active',el.dataset.tpl===tpl)); }
+
+// --- Ügyfél adatok ---
+async function saveCustomer(){
+  if(!state.currentProjectId) return;
+  const name=document.getElementById('cust-name').value;
+  const email=document.getElementById('cust-email').value;
+  const phone=document.getElementById('cust-phone').value;
+  state.customer={name,email,phone};
+  const res=await fetch(`${API}/projects/${state.currentProjectId}`);
+  const {project}=await res.json();
+  await fetch(`${API}/projects/${state.currentProjectId}`,{
+    method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name:project.name,
+      template:project.template,
+      room_width:project.room_width,
+      room_depth:project.room_depth,
+      room_height:project.room_height,
+      customer_name:name,
+      customer_email:email,
+      customer_phone:phone
+    })
+  });
+  showToast('✅ Ügyfél adatok mentve');
+}
+
+// --- PDF EXPORT (HTML -> új ablak) ---
+function openOfferView(){
+  if(!state.currentProjectId){ showToast('Előbb nyiss meg egy projektet'); return; }
+  const url=`${API}/projects/${state.currentProjectId}/offer`;
+  window.open(url,'_blank');
+}
